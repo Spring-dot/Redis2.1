@@ -1,16 +1,13 @@
 #include "client.h"
-
+#include "datastore.h"
 #include <unistd.h>
 #include <sstream>
 
-Client::Client(int fd)
-    : fd_(fd) {}
-
+Client::Client(int fd) : fd_(fd) {}
 Client::~Client() {
     close(fd_);
 }
 
-// Read data from socket
 bool Client::handle_read(DataStore& store) {
     char buf[4096];
 
@@ -25,50 +22,68 @@ bool Client::handle_read(DataStore& store) {
         }
     }
 
-    // Process complete lines
     while (true) {
-        auto pos = inbuf_.find('\n');
-        if (pos == std::string::npos) break;
+        // Step 1: read command line
+        if (state_ == State::READ_COMMAND) {
+            auto pos = inbuf_.find('\n');
+            if (pos == std::string::npos)
+                break;
 
-        std::string line = inbuf_.substr(0, pos);
-        inbuf_.erase(0, pos + 1);
+            std::string line = inbuf_.substr(0, pos);
+            inbuf_.erase(0, pos + 1);
 
-        std::istringstream iss(line);
-        std::string cmd;
-        iss >> cmd;
+            std::istringstream iss(line);
+            std::string cmd;
+            iss >> cmd;
 
-        if (cmd == "SET") {
-            std::string key, value;
-            iss >> key >> value;
-            store.set(key, value);
+            if (cmd == "SET") {
+                iss >> cur_key_ >> expected_value_len_;
+                state_ = State::READ_VALUE;
+            }
+            else if (cmd == "GET") {
+                std::string key, value;
+                iss >> key;
+
+                if (store.get(key, value)) {
+                    outbuf_ += std::to_string(value.size()) + "\n";
+                    outbuf_.append(value);
+                } else {
+                    outbuf_ += "(nil)\n";
+                }
+            }
+            else {
+                outbuf_ += "ERR unknown command\n";
+            }
+        }
+
+        // Step 2: read raw value bytes
+        if (state_ == State::READ_VALUE) {
+            if (inbuf_.size() < expected_value_len_)
+                break;
+
+            std::string value = inbuf_.substr(0, expected_value_len_);
+            inbuf_.erase(0, expected_value_len_);
+
+            store.set(cur_key_, value);
             outbuf_ += "OK\n";
-        }
-        else if (cmd == "GET") {
-            std::string key, value;
-            iss >> key;
-            if (store.get(key, value))
-                outbuf_ += value + "\n";
-            else
-                outbuf_ += "(nil)\n";
-        }
-        else {
-            outbuf_ += "ERR unknown command\n";
+
+            // reset state
+            state_ = State::READ_COMMAND;
+            cur_key_.clear();
+            expected_value_len_ = 0;
         }
     }
 
     return true;
 }
 
-// Write pending data to socket
 void Client::handle_write() {
     while (!outbuf_.empty()) {
         ssize_t n = write(fd_, outbuf_.data(), outbuf_.size());
         if (n > 0) {
             outbuf_.erase(0, n);
         } else {
-            if (errno == EAGAIN || errno == EWOULDBLOCK) break;
-            // On error, we simply stop writing for now
-            return;
+            break;
         }
     }
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <cstddef>
 #include "datastore.h"
 
 class Client {
@@ -15,4 +16,14 @@ private:
     int fd_;
     std::string inbuf_;
     std::string outbuf_;
+
+    // protocol state
+    enum class State {
+        READ_COMMAND,
+        READ_VALUE
+    };
+
+    State state_ = State::READ_COMMAND;
+    std::string cur_key_;
+    size_t expected_value_len_ = 0;
 };
