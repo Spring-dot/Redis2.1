@@ -66,3 +66,45 @@ output buffer
 no parsing yet
 
 simply echo raw bytes
+
+### TESTING/UNDERSTANDING
+
+2️⃣ Execution flow (trace this once)
+
+Do this with a pen or debugger:
+
+main() → Server::run()
+
+setup_socket():
+
+socket
+
+bind
+
+listen
+
+non-blocking
+
+EventLoop::run()
+
+epoll_wait()
+
+Event arrives:
+
+listen_fd → accept()
+
+client_fd → read/write
+
+Client disconnect → cleanup
+
+If you can trace this without looking at code → you understand it.
+
+................
+
+commands:
+make clean
+make 
+./redis-lite
+In another terminal:
+nc localhost 6379
+hello

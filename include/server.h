@@ -1,9 +1,8 @@
 #pragma once
-#include <string>
 
 class Server {
 public:
-    Server(int port);
+    explicit Server(int port);
     void run();
 
 private:

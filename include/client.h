@@ -6,9 +6,7 @@ public:
     explicit Client(int fd);
     ~Client();
 
-    int fd() const;
-
-    void handle_read();
+    bool handle_read();   // returns false if client disconnected
     void handle_write();
     bool has_pending_write() const;
 
