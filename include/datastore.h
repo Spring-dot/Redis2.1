@@ -8,6 +8,7 @@ class TTLManager;
 class DataStore {
 public:
     DataStore(size_t max_bytes);
+    DataStore() = default;
 
     bool get(const std::string& key, std::string& value);
     void set(const std::string& key, const std::string& value);

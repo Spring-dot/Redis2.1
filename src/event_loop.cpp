@@ -7,6 +7,9 @@
 #include <unistd.h>
 #include <iostream>
 
+// STEP 2
+DataStore store_;
+
 EventLoop::EventLoop()
     : listen_fd_(-1) {
     epfd_ = epoll_create1(0);
@@ -90,7 +93,7 @@ void EventLoop::run() {
 
             // Read event
             if (events[i].events & EPOLLIN) {
-                if (!client->handle_read()) {
+                if (!client->handle_read(store_)) {
                     del_epoll(fd);
                     delete client;
                     clients_.erase(fd);

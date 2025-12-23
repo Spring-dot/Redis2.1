@@ -1,5 +1,6 @@
 #pragma once
 
+#include "datastore.h"
 #include <cstdint>
 #include <unordered_map>
 
