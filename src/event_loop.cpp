@@ -7,11 +7,9 @@
 #include <unistd.h>
 #include <iostream>
 
-// STEP 2
-DataStore store_;
 
 EventLoop::EventLoop()
-    : listen_fd_(-1) {
+    : listen_fd_(-1) , store_(3) {
     epfd_ = epoll_create1(0);
     if (epfd_ < 0) {
         perror("epoll_create1");

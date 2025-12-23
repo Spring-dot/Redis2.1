@@ -1,22 +1,16 @@
 #pragma once
 #include <string>
 #include <unordered_map>
-
-class LRUCache;
-class TTLManager;
+#include "lru.h"
 
 class DataStore {
 public:
-    DataStore(size_t max_bytes);
-    DataStore() = default;
+    explicit DataStore(size_t capacity);
 
     bool get(const std::string& key, std::string& value);
     void set(const std::string& key, const std::string& value);
-    void del(const std::string& key);
 
 private:
     std::unordered_map<std::string, std::string> store_;
-    LRUCache* lru_;
-    TTLManager* ttl_;
-    size_t max_bytes_;
+    LRUCache lru_;
 };

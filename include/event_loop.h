@@ -18,6 +18,7 @@ private:
     int epfd_;
     int listen_fd_;
     std::unordered_map<int, Client*> clients_;
+    DataStore store_;
 
     void add_epoll(int fd, uint32_t events);
     void mod_epoll(int fd, uint32_t events);
