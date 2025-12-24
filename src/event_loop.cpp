@@ -108,6 +108,10 @@ void EventLoop::run() {
             uint32_t ev = EPOLLIN;
             if (client->has_pending_write()) ev |= EPOLLOUT;
             mod_epoll(fd, ev);
+
         }
+
+        // cleanup expired keys
+        store_.active_ttl(); // optional
     }
 }

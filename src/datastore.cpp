@@ -3,28 +3,54 @@
 DataStore::DataStore(size_t capacity)
     : lru_(capacity) {}
 
+bool DataStore::exists(const std::string& key) {
+    return store_.count(key);
+}
+
+void DataStore::del(const std::string& key) {
+    store_.erase(key);
+    lru_.erase(key);
+    ttl_.erase(key);
+}
+
 bool DataStore::get(const std::string& key, std::string& value) {
-    auto it = store_.find(key);
-    if (it == store_.end())
+    if (ttl_.expired(key)) {
+        del(key);
         return false;
+    }
+
+    auto it = store_.find(key);
+    if (it == store_.end()) return false;
 
     value = it->second;
     lru_.touch(key);
     return true;
 }
 
-void DataStore::set(const std::string& key, const std::string& value) {
-    bool exists = store_.count(key);
 
+void DataStore::set(const std::string& key, const std::string& value) {
+    bool existed = store_.count(key);
     store_[key] = value;
 
-    if (exists) {
+    if (existed) {
         lru_.touch(key);
+        ttl_.erase(key);   // ✅ MUST clear old TTL
     } else {
         lru_.insert(key);
         if (lru_.full()) {
-            std::string victim = lru_.evict();
-            store_.erase(victim);
+            auto victim = lru_.evict();
+            del(victim);
         }
     }
+}
+
+
+void DataStore::expire(const std::string& key, int seconds) {
+    if (store_.count(key)) {
+        ttl_.set(key, seconds);
+    }
+}
+
+void DataStore::active_ttl() {
+    ttl_.sample_cleanup(5); // cheap
 }

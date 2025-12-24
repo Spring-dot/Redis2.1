@@ -51,6 +51,18 @@ bool Client::handle_read(DataStore& store) {
                     outbuf_ += "(nil)\n";
                 }
             }
+            else if (cmd == "EXPIRE") {
+                std::string key;
+                int seconds;
+                iss >> key >> seconds;
+
+                if (store.exists(key)) {
+                    store.expire(key, seconds);
+                    outbuf_ += "1\n";
+                } else {
+                    outbuf_ += "0\n";
+                }
+            }
             else {
                 outbuf_ += "ERR unknown command\n";
             }
