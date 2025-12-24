@@ -15,80 +15,81 @@ Designed and implemented a Redis-inspired in-memory datastore in C++ with sharde
 Implemented a Redis-inspired in-memory key-value store in C++ using a single-threaded epoll-based event loop, lock-free command execution, LRU eviction, TTL expiration, and asynchronous write-ahead logging for crash recovery.
  
 
-Redis-Lite — A Redis-Inspired In-Memory Key-Value Store (C++)
-Overview
+Perfect — below is the **README content written directly in Markdown**, **not wrapped in any outer code block**.
+You can **copy-paste this directly into `README.md`** and GitHub will render it properly.
 
-Redis-Lite is a Redis-inspired, in-memory key-value datastore implemented in modern C++ (C++17).
+---
 
-The project focuses on core systems concepts rather than feature parity with Redis:
+# Redis-Lite — A Redis-Inspired In-Memory Key-Value Store (C++)
 
-single-threaded, event-driven server (epoll)
+## Overview
 
-deterministic command execution (no locks on hot path)
+**Redis-Lite** is a Redis-inspired, in-memory key-value datastore implemented in **modern C++ (C++17)**.
 
-exact LRU eviction
+The project focuses on **core systems concepts** rather than feature parity with Redis:
 
-TTL / key expiry (lazy + active)
+* single-threaded, event-driven server (`epoll`)
+* deterministic command execution (no locks on the hot path)
+* exact **LRU eviction**
+* **TTL / key expiry** (lazy + active)
+* length-prefixed, binary-safe protocol
+* clean separation of concerns
+* extensible design (persistence via WAL planned)
 
-binary-safe protocol (length-prefixed)
+This is **not a Redis clone**.
+It is a **learning + systems-engineering project** inspired by Redis’s architecture and tradeoffs.
 
-clean separation of concerns
+---
 
-extensible design (persistence via WAL planned)
+## Key Design Principles
 
-This is not a Redis clone.
-It is a learning + systems-engineering project inspired by Redis’s architecture and tradeoffs.
+### 1. Single-Threaded Core
 
-Key Design Principles
-1. Single-Threaded Core
-
-All command execution and data mutation happen in one thread.
+All command execution and data mutation happen in **one thread**.
 
 Why:
 
-no locks on the hot path
-
-deterministic behavior
-
-simpler correctness reasoning
-
-matches Redis’s core philosophy
+* no locks on the hot path
+* deterministic behavior
+* simpler correctness reasoning
+* matches Redis’s core philosophy
 
 Blocking operations (e.g. persistence) are planned to be offloaded to background threads.
 
-2. Event-Driven Networking
+---
+
+### 2. Event-Driven Networking
 
 The server uses:
 
-non-blocking TCP sockets
-
-epoll for I/O multiplexing
-
-per-client input/output buffers
+* non-blocking TCP sockets
+* `epoll` for I/O multiplexing
+* per-client input/output buffers
 
 This allows:
 
-many concurrent clients
+* many concurrent clients
+* no thread-per-connection overhead
+* correct handling of partial reads/writes
 
-no thread-per-connection overhead
+---
 
-correct handling of partial reads/writes
-
-3. Explicit Tradeoffs
+### 3. Explicit Tradeoffs
 
 This project intentionally:
 
-prioritizes clarity over micro-optimizations
+* prioritizes clarity over micro-optimizations
+* implements *exact* LRU (not approximate)
+* uses lazy expiry instead of timers
+* avoids protocol guesswork
 
-implements exact LRU (not approximate)
+Every simplification is **conscious and documented**.
 
-uses lazy expiry instead of timers
+---
 
-avoids protocol guesswork
+## Architecture Overview
 
-Every simplification is conscious and documented.
-
-Architecture Overview
+```
 ┌─────────────────────────────┐
 │           Clients           │
 │     (nc / Python / etc.)    │
@@ -110,8 +111,13 @@ Architecture Overview
 │  │  LRU    │  │  TTL    │  │
 │  └─────────┘  └─────────┘  │
 └─────────────────────────────┘
+```
 
-Directory Structure
+---
+
+## Directory Structure
+
+```
 redis-lite/
 ├── include/
 │   ├── server.h        # Server bootstrap
@@ -131,154 +137,167 @@ redis-lite/
 │   └── utils.cpp
 ├── Makefile
 └── README.md
+```
 
-Supported Commands
-SET
-SET <key> <length>\n
+---
+
+## Supported Commands
+
+### SET
+
+```
+SET <key> <length>
 <raw value bytes>
+```
 
-
-Stores a value under key
-
-Value is binary-safe
-
-<length> specifies exact number of bytes
-
-Overwriting a key clears its previous TTL
+* Stores a value under `key`
+* Value is **binary-safe**
+* `<length>` specifies **exact number of bytes**
+* Overwriting a key clears its previous TTL
 
 Response:
 
+```
 OK
+```
 
-GET
-GET <key>\n
+---
 
+### GET
 
-Responses:
-
-If key exists and not expired:
-
-<length>
-<raw value bytes>
-
-
-If key does not exist or expired:
-
-(nil)
-
-EXPIRE
-EXPIRE <key> <seconds>\n
-
-
-Sets a TTL (time-to-live) on an existing key
-
-TTL is in seconds
+```
+GET <key>
+```
 
 Responses:
 
-1 → TTL set successfully
+* If key exists and not expired:
 
-0 → key does not exist
+  ```
+  <length>
+  <raw value bytes>
+  ```
+* If key does not exist or expired:
 
-TTL (Key Expiry) Semantics
+  ```
+  (nil)
+  ```
 
-TTL implementation matches Redis philosophy (simplified):
+---
 
-Lazy Expiration
+### EXPIRE
 
-On every GET
+```
+EXPIRE <key> <seconds>
+```
 
-If key is expired:
+* Sets a TTL (time-to-live) on an existing key
+* TTL is in **seconds**
 
-it is deleted immediately
+Responses:
 
-behaves as (nil)
+* `1` → TTL set successfully
+* `0` → key does not exist
 
-Active Expiration (Sampling)
+---
 
-Periodically samples a small number of TTL keys
+## TTL (Key Expiry) Semantics
 
-Deletes expired ones
+TTL implementation matches Redis philosophy (simplified).
 
-Prevents memory from filling with dead keys
+### Lazy Expiration
 
-Important Notes
+* On every `GET`
+* If key is expired:
 
-Expiry is best-effort, not exact-time
+  * it is deleted immediately
+  * behaves as `(nil)`
 
-No background timers
+### Active Expiration (Sampling)
 
-No per-key wakeups
+* Periodically samples a small number of TTL keys
+* Deletes expired ones
+* Prevents memory from filling with dead keys
 
-This is intentional and mirrors Redis design.
+### Notes
 
-LRU Eviction
+* Expiry is **best-effort**, not exact-time
+* No background timers
+* No per-key wakeups
 
-Redis-Lite enforces a fixed capacity (number of keys).
+---
 
-Policy
+## LRU Eviction
 
-Exact Least Recently Used (LRU)
+Redis-Lite enforces a **fixed capacity** (number of keys).
 
-Access via GET or SET updates recency
+### Policy
 
-On overflow:
+* Exact **Least Recently Used (LRU)**
+* Access via `GET` or `SET` updates recency
+* On overflow:
 
-least recently used key is evicted
+  * least recently used key is evicted
 
-Data Structures
+### Data Structures
 
-unordered_map<key, value>
+* `unordered_map<key, value>`
+* doubly-linked list for recency tracking
 
-doubly-linked list for recency tracking
+All operations are **O(1)**.
 
-Operations:
+---
 
-GET: O(1)
+## Protocol Design Notes
 
-SET: O(1)
+### Why Length-Prefixed?
 
-eviction: O(1)
+* Supports binary values
+* Avoids ambiguity
+* Correct for stream-based TCP
 
-Protocol Design Notes
-Why Length-Prefixed?
+### Terminal UX Caveat
 
-Supports binary values
+When using `nc`:
 
-Avoids ambiguity
-
-Correct for stream-based TCP
-
-Terminal UX Caveat
-
-When using nc:
-
-pressing Enter sends an extra \n
-
-this byte is not part of the value unless included in length
+* pressing Enter sends an extra `\n`
+* this byte is **not part of the value unless included in length**
 
 For binary or multiline values:
 
-use a programmatic client (Python, etc.)
+* use a programmatic client (Python, etc.)
 
-This matches Redis behavior:
+This mirrors Redis behavior:
 
-Redis server is binary-strict
+* Redis server is binary-strict
+* Redis CLI hides protocol complexity
 
-Redis CLI hides protocol complexity
+---
 
-How to Build
+## Build Instructions
+
+```
 make clean
 make
+```
 
-How to Run
+---
+
+## Running the Server
+
+```
 ./redis-lite
+```
 
+The server listens on port **6379**.
 
-Server listens on port 6379.
+---
 
-Testing Examples
-Basic SET / GET (small values)
+## Testing Examples
+
+### Basic SET / GET
+
+```
 nc localhost 6379
 SET a 5
 hello
@@ -286,16 +305,26 @@ OK
 GET a
 5
 hello
+```
 
-TTL Test
+---
+
+### TTL Test
+
+```
 SET k 3
 abc
 EXPIRE k 2
 (wait 2 seconds)
 GET k
 (nil)
+```
 
-Programmatic Test (Recommended for Binary Values)
+---
+
+### Programmatic Binary Test (Recommended)
+
+```python
 import socket
 
 s = socket.socket()
@@ -307,48 +336,47 @@ print(s.recv(1024))
 
 s.sendall(b"GET a\n")
 print(s.recv(1024))
+```
 
-What Is NOT Implemented (Yet)
+---
 
-Persistence (WAL) ⬅️ next step
+## What Is NOT Implemented (Yet)
 
-Replication
+* Persistence (WAL) — **next step**
+* Replication
+* Clustering
+* RESP protocol
+* Authentication
 
-Clustering
+---
 
-Lua scripting
-
-RESP protocol
-
-Authentication
-
-These are intentionally out of scope for now.
-
-Planned Next Feature: WAL (Persistence)
+## Planned Next Feature: WAL (Persistence)
 
 Write-Ahead Logging will add:
 
-crash recovery
-
-background I/O thread
-
-mutex + condition variable
-
-durability tradeoffs
+* crash recovery
+* background I/O thread
+* mutex + condition variable
+* durability tradeoffs
 
 This will showcase:
 
-multithreading
+* multithreading
+* producer–consumer design
+* safe concurrency
 
-producer–consumer design
+---
 
-safe concurrency
+## Interview-Ready Summary
 
-Interview-Ready Summary
+> Redis-Lite is a Redis-inspired, single-threaded, event-driven in-memory datastore implemented in C++.
+> It supports binary-safe values, exact LRU eviction, TTL expiry, and is designed for correctness and clarity rather than feature parity.
 
-Redis-Lite is a Redis-inspired, single-threaded, event-driven in-memory datastore implemented in C++.
-It supports binary-safe values, exact LRU eviction, TTL expiry, and is designed for correctness and clarity rather than feature parity.
+---
 
-License
+## License
 
 Educational / personal project.
+
+---
+
