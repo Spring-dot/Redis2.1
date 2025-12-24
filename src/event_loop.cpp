@@ -23,7 +23,7 @@ EventLoop::~EventLoop() {
 
 void EventLoop::set_listen_fd(int fd) {
     listen_fd_ = fd;
-    add_epoll(fd, EPOLLIN);
+    add_epoll(fd, EPOLLIN); // monitor for incoming connections
 }
 
 void EventLoop::add_epoll(int fd, uint32_t events) {

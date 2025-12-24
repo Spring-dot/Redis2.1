@@ -11,6 +11,12 @@
 Server::Server(int port)
     : port_(port), listen_fd_(-1) {}
 
+Server::~Server() {
+    if (listen_fd_ >= 0) {
+        close(listen_fd_);
+    }
+}
+
 void Server::setup_socket() {
     listen_fd_ = socket(AF_INET, SOCK_STREAM, 0);
     if (listen_fd_ < 0) {
@@ -41,6 +47,7 @@ void Server::setup_socket() {
         exit(EXIT_FAILURE);
     }
 
+    // non-blocking so that accept() doesn't block the event loop
     utils::set_nonblocking(listen_fd_);
 
     std::cout << "Listening on port " << port_ << std::endl;

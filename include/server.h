@@ -2,6 +2,8 @@
 
 class Server {
 public:
+    Server();
+    ~Server();
     explicit Server(int port);
     void run();
 
