@@ -1,26 +1,15 @@
-# Redis2.1 (C++ High-Performance In-Memory Key-Value Store (Redis-inspired))
+# Redis2.1 (C++ High-Performance In-Memory Key-Value Store)
 - creating redis from scratch using C/C++
-
-# Resume bullet 
-Strong version:
 
 Built a high-performance in-memory key-value store in C++17 inspired by Redis, supporting concurrent clients, sharded locking, LRU eviction, TTL expiration, and persistent recovery via WAL, achieving low-latency reads under multi-threaded load.
 
-Even stronger (with numbers):
-
 Designed and implemented a Redis-inspired in-memory datastore in C++ with sharded concurrency control, LRU eviction, TTL expiration, and write-ahead logging, achieving ~XXX QPS with XX concurrent clients.
-
-11. Resume bullet (now genuinely strong)
 
 Implemented a Redis-inspired in-memory key-value store in C++ using a single-threaded epoll-based event loop, lock-free command execution, LRU eviction, TTL expiration, and asynchronous write-ahead logging for crash recovery.
  
-
-Perfect — below is the **README content written directly in Markdown**, **not wrapped in any outer code block**.
-You can **copy-paste this directly into `README.md`** and GitHub will render it properly.
-
 ---
 
-# Redis-Lite — A Redis-Inspired In-Memory Key-Value Store (C++)
+# Redis2.1 — A Redis-Inspired In-Memory Key-Value Store (C++)
 
 ## Overview
 
@@ -37,8 +26,6 @@ The project focuses on **core systems concepts** rather than feature parity with
 * extensible design (persistence via WAL planned)
 
 This is **not a Redis clone**.
-It is a **learning + systems-engineering project** inspired by Redis’s architecture and tradeoffs.
-
 ---
 
 ## Key Design Principles
@@ -379,4 +366,5 @@ This will showcase:
 Educational / personal project.
 
 ---
+
 
