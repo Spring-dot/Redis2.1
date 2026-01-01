@@ -3,6 +3,8 @@
 #include <unordered_map>
 #include "lru.h"
 #include "ttl.h"
+#include "wal.h"
+
 
 class DataStore {
 public:
@@ -15,6 +17,9 @@ public:
 
     void expire(const std::string& key, int seconds);
     void active_ttl();   // optional
+    WAL* wal_ = nullptr;
+    void attach_wal(WAL* wal);
+
 
 private:
     std::unordered_map<std::string, std::string> store_;

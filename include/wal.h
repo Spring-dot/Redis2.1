@@ -2,21 +2,25 @@
 #include <string>
 #include <thread>
 #include <mutex>
-#include <vector>
+#include <condition_variable>
+#include <queue>
+#include <atomic>
 
 class WAL {
 public:
     explicit WAL(const std::string& path);
     ~WAL();
 
-    void append(const std::string& entry);
-    void replay();
-    void start_bg_flush();
+    void log(const std::string& record);
+    void replay(class DataStore& store);
 
 private:
+    void writer_loop();
+
     std::string path_;
-    std::vector<std::string> buffer_;
+    std::thread worker_;
     std::mutex mtx_;
-    std::thread bg_thread_;
-    bool running_;
+    std::condition_variable cv_;
+    std::queue<std::string> queue_;
+    std::atomic<bool> running_{true};
 };
